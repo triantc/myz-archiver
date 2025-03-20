@@ -1,4 +1,4 @@
-# Myz Archiver :page_facing_up:
+# Myz Archiver
 **Myz Archiver** is a modular archiving utility/system program similar in functionality to common archiving tools like `tar` or `zip`, but with custom behavior. It allows users to create, extract, append, delete, and query archives containing files, directories, as well as symbolic and hard links. Additionally, it supports optional compression (using `gzip`) during archive creation or append (enabled with the `-j` flag), ensuring that files are restored in their original, uncompressed form upon extraction.
 
 ## Features
