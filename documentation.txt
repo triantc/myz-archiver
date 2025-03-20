@@ -1,0 +1,87 @@
+Project Documentation for myz
+
+Overview
+
+myz is a modular archive utility/system program similar in functionality to common archiving tools (such as tar or zip) but with custom behavior. It allows users to create, extract, append, delete, and query archives containing files, directories, as well as soft and hard links. In addition, it supports optional compression (using gzip) during archive creation or append (enabled with the -j flag), while ensuring that files are restored in their original, uncompressed form upon extraction.
+
+Archive File Structure
+
+The archive file has a three-part layout:
+
+    Header: A fixed-size header (256 bytes) that contains:
+        The total number of metadata entries.
+        The offset in the archive where the metadata block begins.
+        Reserved bytes for future use.
+    File Data Block: The concatenated binary data of all archived files (only for regular files that store data).
+    Metadata Block: A sequence of metadata entries (one for each archived entity) that describes each entity’s properties (path, mode, owner, group, timestamps, size, data offset, inode, hardlink flag, and, for symlinks, the link target).
+
+Project Structure and Modular Design
+
+To keep the code clean and maintainable, the project is organized into several modules:
+
+    Common Modules:
+        structs.h: Contains definitions for all core data structures such as FileMetadata, ArchiveHeader, and MetadataArray.
+        utils.h / utils.c: Provide utility functions used across the project.
+
+    Flag-Specific Modules:
+        c_flag/: Contains c_flag.h and c_flag.c, which implement the -c flag for archive creation.
+        x_flag/: Contains x_flag.h and x_flag.c, which implement the -x flag for extraction.
+        a_flag/: Contains a_flag.h and a_flag.c, which implement the -a flag for appending new entities to an existing archive.
+        d_flag/: Contains d_flag.h and d_flag.c, which implement the -d flag for deleting specific entities from an archive.
+        m_flag/: Contains m_flag.h and m_flag.c, which implement the -m flag for printing metadata.
+        q_flag/: Contains q_flag.h and q_flag.c, which implement the -q flag for querying the existence of specific files or directories in the archive.
+        p_flag/: Contains p_flag.h and p_flag.c, which implement the -p flag for printing the archive’s hierarchy (in a tree-like format).
+
+    Main Module:
+        myz.c: Contains the main() function, which dispatches execution based on the provided command-line flag.
+
+Key Implementation Details
+
+1. Single process_path Function
+
+All archive creation and append operations use a single function process_path() (implemented in utils.c) that:
+
+    Recursively traverses directories.
+    For regular files:
+        If -j (compression) is enabled, it compresses file data by forking and executing gzip -c <file> via a pipe. The function compress_file_to_archive() handles this logic.
+        Otherwise, it reads file data normally.
+    For symbolic links:
+        It uses readlink() to obtain the target and stores it in the metadata.
+    For hard links:
+        It checks (via inode comparisons) if a file with the same inode has already been archived. If so, the new entry is marked as a hard link (using a flag such as is_hardlink) and shares the same data offset as the original entry.
+    The metadata for each entry (file, directory, symlink) is stored in a dynamically managed array (MetadataArray).
+
+2. Compression with -j
+
+    When the -j flag is active, the global variable compress_flag is set.
+    In process_path(), if compress_flag is true and the current entity is a regular file, the file is compressed before writing its data into the archive.
+    Compression is implemented using a helper function compress_file_to_archive(), which creates a pipe, forks a child process, and uses execlp() to run gzip -c <file>. The parent process reads the compressed data from the pipe and writes it to the archive.
+    The metadata field size is updated with the size of the compressed data.
+    Importantly, the archive may contain both compressed and uncompressed files.
+    During extraction, the code checks the first two bytes (magic number) of each file’s data block; if they indicate gzip compression, the file is decompressed (using a temporary file and executing gunzip -c) so that the final extracted file is in its original, uncompressed form.
+
+3. Extraction Process (-x)
+
+    The extraction function reads the header and metadata from the archive.
+    For directories, it creates the directory structure.
+    For regular files:
+        It checks if the data block is compressed by reading the magic number.
+        If compressed, it decompresses the file using gunzip -c (via a temporary file and popen or similar).
+        It also handles file name collisions by invoking generate_unique_filename() if a file with the same name already exists.
+    For hard links, it locates the first occurrence of the file (using the inode) and creates a hard link with the link() system call.
+    For symbolic links, it creates a symlink using the stored target (obtained via readlink() during archive creation).
+
+4. Append (-a) and Delete (-d) Operations
+
+    Append (-a):
+        The append functionality reads the existing archive (header and metadata), checks for duplicates, and adds new entries if they do not already exist.
+        New file data is written before the current metadata block, and a new metadata block is generated and combined with the old one.
+    Delete (-d):
+        The delete functionality reads the existing archive and filters out the metadata entries corresponding to the files or directories specified in the deletion list.
+        A new archive is created (using a temporary file), which contains all file data and only the metadata entries that are not marked for deletion.
+        Finally, the original archive is replaced by the new one.
+
+Build System 
+
+A sample Makefile is provided to compile the project. Object files are placed into a separate folder (e.g., build/) to keep the source directory clean, and each module (flag) is compiled separately and linked into the final executable myz.
+For ease of use try 'make' and 'make clean'.
