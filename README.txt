@@ -27,21 +27,24 @@ The archive file consists of three main sections:
 
 The project is organized to keep the code clean, maintainable, and easy to extend. The code is divided into modules for different functionality, such as flag handling, utility functions, and data structures:
 
-- **Common Modules**:
-  - `structs.h`: Contains definitions for all core data structures such as `FileMetadata`, `ArchiveHeader`, and `MetadataArray`.
-  - `utils.h` / `utils.c`: Provides utility functions used across the project.
+### Common Modules:
 
-- **Flag-Specific Modules**:
-  - `c_flag/`: Implements the `-c` flag for archive creation.
-  - `x_flag/`: Implements the `-x` flag for extraction.
-  - `a_flag/`: Implements the `-a` flag for appending new entities to an existing archive.
-  - `d_flag/`: Implements the `-d` flag for deleting specific entities from an archive.
-  - `m_flag/`: Implements the `-m` flag for printing metadata.
-  - `q_flag/`: Implements the `-q` flag for querying the existence of specific files or directories in the archive.
-  - `p_flag/`: Implements the `-p` flag for printing the archive’s hierarchy in a tree-like format.
+- `structs.h`: Contains definitions for all core data structures such as `FileMetadata`, `ArchiveHeader`, and `MetadataArray`.
+- `utils.h` / `utils.c`: Provides utility functions used across the project.
 
-- **Main Module**:
-  - `myz.c`: Contains the `main()` function, which dispatches execution based on the provided command-line flag.
+### Flag-Specific Modules:
+
+- `c_flag/`: Implements the `-c` flag for archive creation.
+- `x_flag/`: Implements the `-x` flag for extraction.
+- `a_flag/`: Implements the `-a` flag for appending new entities to an existing archive.
+- `d_flag/`: Implements the `-d` flag for deleting specific entities from an archive.
+- `m_flag/`: Implements the `-m` flag for printing metadata.
+- `q_flag/`: Implements the `-q` flag for querying the existence of specific files or directories in the archive.
+- `p_flag/`: Implements the `-p` flag for printing the archive’s hierarchy in a tree-like format.
+
+### Main Module:
+
+- `myz.c`: Contains the `main()` function, which dispatches execution based on the provided command-line flag.
 
 ## Key Implementation Details
 
